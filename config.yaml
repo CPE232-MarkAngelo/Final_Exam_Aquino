@@ -1,0 +1,29 @@
+# Config.yaml Aquino, Mark Angelo #
+---
+- hosts: all
+  become: true
+  pre_tasks:
+
+  - name: Install Updates (Ubuntu)
+    apt:
+      update_cache: yes
+    changed_when: false
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Install Updates (CentOS)
+    dnf:
+      update_cache: yes
+    changed_when:
+    when: ansible_distribution == "Centos"
+
+- hosts: ubuntu_server
+  become: true
+  roles:
+    - apache2
+    - prometheus-ubuntu
+
+- hosts: centos_server
+  become: true
+  roles:
+    - httpd
+    - prometheus-centos

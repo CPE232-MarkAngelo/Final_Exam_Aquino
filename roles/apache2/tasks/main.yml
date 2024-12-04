@@ -1,0 +1,13 @@
+# Apache for Ubuntu
+
+- name: installing apache2 for ubuntu
+  apt:
+    name: apache2
+    state: latest
+    update_cache: yes
+
+- name: installing php for ubuntu
+  apt:
+    name: libapache2-mod-php
+    state: latest
+    update_cache: yes

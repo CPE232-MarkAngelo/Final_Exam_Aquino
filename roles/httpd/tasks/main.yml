@@ -1,0 +1,13 @@
+# httpd for Centos
+
+- name: installing httpd for centOS
+  dnf:
+    name: httpd
+    state: latest
+
+- name: installing php for centOS
+  dnf:
+    name: php
+    state: latest
+
+

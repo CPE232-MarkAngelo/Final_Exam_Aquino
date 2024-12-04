@@ -1,0 +1,115 @@
+# Installation of Prometheus for CentOS #
+- name: Install Apache and PHP
+  tags: apache,centos,httpd
+  dnf:
+    name:
+      - httpd
+      - php
+    state: latest
+
+- name: Install MariaDB package
+  tags: centos,db,mariadb
+  dnf:
+    name: mariadb-server
+    state: latest
+
+- name: Restart and enable MariaDB
+  tags: res_serv,centos
+  service:
+    name: mariadb
+    state: restarted
+    enabled: true
+
+- name: Start and enable HTTPD
+  tags: centos,httpd
+  service:
+    name: httpd
+    state: started
+    enabled: true
+
+- name: Enable EPEL repository
+  tags: epel_repo
+  yum:
+    name: epel-release
+    state: present
+
+- name: Download Prometheus binary
+  tags: prometheus_download
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v2.42.0/prometheus-2.42.0.linux-amd64.tar.gz"
+    dest: /tmp/prometheus.tar.gz
+
+
+
+- name: Extract Prometheus binary
+  tags: prometheus_extract
+  unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /opt/
+    remote_src: yes
+
+- name: Create Prometheus user
+  tags: prometheus_user
+  user:
+    name: prometheus
+    shell: /sbin/nologin
+
+- name: Create Prometheus directories
+  tags: prometheus_dirs
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  loop:
+    - /etc/prometheus
+    - /var/lib/prometheus
+
+- name: Create Prometheus systemd service
+  tags: prometheus_service
+  copy:
+    dest: /etc/systemd/system/prometheus.service
+    content: |
+      [Unit]
+      Description=Prometheus
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      User=prometheus
+      Group=prometheus
+      ExecStart=/opt/prometheus-2.42.0.linux-amd64/prometheus \
+        --config.file=/etc/prometheus/prometheus.yml \
+        --storage.tsdb.path=/var/lib/prometheus \
+        --web.listen-address=0.0.0.0:9090
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd daemon
+  tags: prometheus_systemd_reload
+  systemd:
+    daemon_reload: yes
+
+- name: Start and enable Prometheus
+  tags: prometheus_start
+  service:
+    name: prometheus
+    state: started
+    enabled: true
+
+- name: Open firewall port 9090 for Prometheus
+  tags: open_firewall
+  firewalld:
+    port: 9090/tcp
+    permanent: true
+    state: enabled
+
+- name: Restart firewalld to apply changes
+  tags: rest_fireld
+  systemd:
+    name: firewalld
+    state: restarted
+    enabled: true
+
